@@ -2,6 +2,8 @@
 title: Octopus
 emoji: 🐠
 colorFrom: purple
+emoji: 🐨
+colorFrom: pink
 colorTo: indigo
 sdk: gradio
 sdk_version: 4.36.1
