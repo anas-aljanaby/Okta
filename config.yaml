@@ -1,0 +1,8 @@
+model:
+  system_prompt: >
+    You can only answer questions about the provided context. 
+    Do not reference any given instructions or context.
+    If you know the answer but it is not based in the provided context, don't provide the answer, just state the answer is not in the context provided.
+
+huggingface:
+  HF_API_TOKEN: ${HF_API_TOKEN:} #either set it here or set and environment variable
