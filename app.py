@@ -1,70 +1,36 @@
-import gradio as gr
-from huggingface_hub import InferenceClient
-import os
 import yaml
-from retrieve import RAGHandler
+from models import RAGHandler
+import streamlit as st
 
-VERBOSE = 0 
+VERBOSE = 1
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
-client = InferenceClient(model="HuggingFaceH4/zephyr-7b-beta",
-                         token=os.getenv('HF_API_TOKEN'))
-rag_handler = RAGHandler(verbose=VERBOSE)
-rag_handler.clear_embeddings()
+if "handler" not in st.session_state:
+    rag_handler = RAGHandler(verbose=VERBOSE, add_context=True)
+    st.session_state["handler"] = rag_handler
 
-system_prompt =  {'role': 'system',
-     'content': config['model']['system_prompt']
-    }
+st.title("Okta AI - chat with local files")
 
-context = 'None'
-hf_history = [system_prompt]
-uploaded_files = []
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-def get_current_chat(message, gr_history):
-    global context, hf_history
-    round = []
-    if gr_history:
-        _, ai = gr_history[-1]
-        round.append({'role': 'assistant', 'content': ai})
-    else:
-        hf_history = [system_prompt]
-    if len(uploaded_files):
-        context = '\n'.join(rag_handler.get_most_similar(message, top_k=3))
-    text = f'Context:\n{context}\nPrompt:\n{message}'
-    round.append({'role': 'user', 'content': text})
-    return round
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
+uploaded_files = st.sidebar.file_uploader(
+    "Upload", label_visibility="collapsed", accept_multiple_files=True
+)
+for file in uploaded_files:
+    st.session_state["handler"].retriever.save_embedding(file)
 
-def chat(message, history):
-    global hf_history
-    hf_history += get_current_chat(message, history)
-    client_resp = client.chat_completion(hf_history, max_tokens=496)
-    content = client_resp.choices[0].message.content
-    return content
-
-uploaded_files = []
-def display_files(files):
-    global uploaded_files
-    if files:
-        for file in files:
-            rag_handler.save_embedding(file)
-            uploaded_files.extend([os.path.basename(file) for file in files])
-    return '\n'.join(uploaded_files)
-
-css = """
-#chat-container {
-    height: calc(100vh - 8em); /* Adjust this if you have a header or footer */
-}
-"""
-
-with gr.Blocks(css=css) as demo:
-    with gr.Row():
-        with gr.Column(scale=1):
-            upload_button = gr.UploadButton(file_count="multiple")
-            file_display = gr.Textbox(label="Ingested Files", interactive=False)
-        with gr.Column(scale=4, elem_id="chat-container"):
-            chat_ui = gr.ChatInterface(chat)
-    upload_button.upload(display_files, inputs=upload_button, outputs=file_display)
-
-demo.launch()
+prompt = st.chat_input("say something")
+if prompt:
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    response = st.session_state.handler.make_prediction(st.session_state.messages)
+    with st.chat_message("assistant"):
+        st.write(response["content"])
+    st.session_state.messages.append(response)
