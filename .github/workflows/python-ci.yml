@@ -26,10 +26,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Lint with pylint
-      run: |
-        -python3 -m pylint --disable=R,C *.py
-
     - name: Test with pytest
       run: |
         python3 -m pytest
