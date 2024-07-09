@@ -1,6 +1,3 @@
-![Build Status](https://github.com/anas-aljanaby/Okta/actions/workflows/python-ci.yml/badge.svg)
-
-
 ---
 title: Okta
 emoji: 👀
@@ -14,3 +11,7 @@ license: apache-2.0
 ---
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+
+
+![Build Status](https://github.com/<username>/<repository>/actions/workflows/python-ci.yml/badge.svg)
+
