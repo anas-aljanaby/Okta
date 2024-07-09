@@ -1,3 +1,6 @@
+![Build Status](https://github.com/anas-aljanaby/Okta/actions/workflows/python-ci.yml/badge.svg)
+
+
 ---
 title: Okta
 emoji: 👀
