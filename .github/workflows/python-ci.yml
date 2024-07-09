@@ -28,7 +28,7 @@ jobs:
 
     - name: Lint with pylint
       run: |
-        python3 -m pylint --disable=R,C *.py
+        -python3 -m pylint --disable=R,C *.py
 
     - name: Test with pytest
       run: |
