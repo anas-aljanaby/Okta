@@ -22,5 +22,10 @@ Starting a New Chat
 - If you prefer, you can also drag and drop an entire directory into the sidebar. The app will automatically organize and index the contents of the directory, making all of its files accessible to the LLM.
 4. Ask Questions:
 - With your files uploaded, the LLM will use this specific set of documents to answer any questions you pose during the chat session. This ensures that responses are contextually relevant and based on the information you've provided.
-
-
+## Contributing
+Any contributions are welcome.
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature/feature-name`)
+3. Commit your changes (`git commit -am 'Add a feature'`)
+4. Push to the branch (`git push origin feature/feature-name`)
+5. Open a new Pull Request
