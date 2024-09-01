@@ -106,7 +106,6 @@ if "messages" not in st.session_state:
     else:
         st.session_state.messages = load_chat("welcome")
         st.session_state.current_chat = "welcome"
-        # print(st.session_state.messages)
 
 
 def rename_chat():
@@ -114,7 +113,6 @@ def rename_chat():
     new_name = st.text_input(
         "Rename current chat", value=current_chat, key="new_chat_name"
     )
-    # Use a unique key for the button
     if st.button("Confirm Rename", key="confirm_rename_button"):
         st.write("Button clicked!")
         if new_name and new_name != current_chat:
@@ -139,7 +137,6 @@ def rename_chat():
 
 
 def delete_chat():
-    # function to delete st.session_state.current_chat
     if st.button("Delete Chat"):
         chat_id = st.session_state.current_chat
         if os.path.exists(f"chats/{chat_id}.json"):
@@ -147,24 +144,17 @@ def delete_chat():
             st.session_state.current_chat = None
             st.rerun()
 
-
-# with cols[2]:
-#     if st.button("Delete Chat"):
-#         delete_chat()
-
 cols = st.columns([0.15, 0.2, 0.2, 0.2, 0.2])
 if "settings_open" not in st.session_state:
     st.session_state.settings_open = False
 with cols[0]:
     if st.button("Chat Settings"):
         st.session_state.settings_open = not st.session_state.settings_open
-# Show/hide the rename functionality based on the settings_open state
 if st.session_state.settings_open:
     with cols[1]:
         rename_chat()
     with cols[2]:
         delete_chat()
-
 
 st.title("Okta AI - chat with local files")
 
@@ -208,7 +198,7 @@ if st.sidebar.button("New Chat"):
     st.session_state.current_chat = create_new_chat()
     st.session_state.messages = load_chat(st.session_state.current_chat)
     st.session_state["handler"] = initialize_handler(llm_type, llm_name)
-    # st.rerun()
+
 button_style = """
     <style>
     .custom-chat-button-container button {
@@ -249,10 +239,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# make 3 columns for the chat buttons
-
-
-# display all the chat options in the sidebar, chats are stored in the chats folder, chats/{chat_id}.json
 chats = [chat.split(".")[0] for chat in os.listdir("chats") if chat.endswith(".json")]
 print(chats)
 for chat in chats:
@@ -279,6 +265,7 @@ chat_id, messages = (
     st.session_state.messages["chat_id"],
     st.session_state.messages["messages"],
 )
+
 for i, msg in enumerate(messages):
     role, content = msg["role"], msg["content"]
     with st.chat_message(role):

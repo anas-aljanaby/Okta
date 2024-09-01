@@ -1,16 +1,15 @@
 ![Build Status](https://github.com/anas-aljanaby/Okta/actions/workflows/python-ci.yml/badge.svg)
+# Okta AI
+This RAG (Retrieval-Augmented Generation) App enables users to run language models (LLMs) on local files, it helps organize your file directories into seperate chat sessions.
+## Quick Start
+1. Clone the repository
+2. Install the required packages
+3. Run the app
+```bash
+git clone https://github.com/anas-aljanaby/Okta.git
+cd Okta
+pip install -r requirements.txt
+streamlit run app.py
+```
 
 
----
-title: Okta
-emoji: 👀
-colorFrom: yellow
-colorTo: blue
-sdk: streamlit
-sdk_version: 1.36.0
-app_file: app.py
-pinned: false
-license: apache-2.0
----
-
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
