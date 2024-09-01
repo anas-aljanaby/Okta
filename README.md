@@ -12,5 +12,15 @@ cd Okta
 pip install -r requirements.txt
 streamlit run app.py
 ```
+## Usage
+Starting a New Chat
+1. Create a New Chat:
+- Begin by clicking on the New Chat button located in the app's main interface.
+2. Upload Files:
+- Once you've started a new chat, you can upload a file or multiple files directly from the sidebar. These files will serve as the knowledge base for the language model during this chat session.
+3. Drag and Drop Directories:
+- If you prefer, you can also drag and drop an entire directory into the sidebar. The app will automatically organize and index the contents of the directory, making all of its files accessible to the LLM.
+4. Ask Questions:
+- With your files uploaded, the LLM will use this specific set of documents to answer any questions you pose during the chat session. This ensures that responses are contextually relevant and based on the information you've provided.
 
 
