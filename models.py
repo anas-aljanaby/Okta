@@ -15,7 +15,10 @@ class Model:
             with open("config.yaml", "r") as file:
                 config = yaml.safe_load(file)
             self.history = [
-                {"role": "system", "content": config["model"]["system_prompt"]}
+                {
+                    "role": "system",
+                    "content": "You are a helpful chat assistant, that follows orders",
+                }
             ]
         else:
             self.history = []

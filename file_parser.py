@@ -1,5 +1,5 @@
 from docx import Document
-import PyPDF2
+import pypdf as PyPDF2
 from pptx import Presentation
 import arabic_reshaper
 from bidi.algorithm import get_display

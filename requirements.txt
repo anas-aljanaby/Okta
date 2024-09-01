@@ -59,7 +59,7 @@ pydantic_core==2.20.1
 pydeck==0.9.1
 Pygments==2.18.0
 pylint==3.2.5
-PyPDF2==3.0.1
+pypdf==4.3.1
 pytest==8.2.2
 python-bidi==0.4.2
 python-dateutil==2.9.0.post0
@@ -95,4 +95,5 @@ typing_extensions==4.12.2
 tzdata==2024.1
 urllib3==2.2.2
 virtualenv==20.26.3
+watchdog==5.0.0
 XlsxWriter==3.2.0

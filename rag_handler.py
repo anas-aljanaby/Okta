@@ -5,6 +5,7 @@ import numpy as np
 import os
 import json
 import shutil
+import yaml
 
 from file_parser import parse_file
 
@@ -23,7 +24,7 @@ class Retriever:
         self.embeddings_model = AutoModel.from_pretrained(embeddings_model)
         self.embeddings_folder = embeddings_folder
         self.chunk_size = chunk_size
-        self.embedded_files = []
+        self.embedded_files = dict()
         self.verbose = verbose
         self.top_k = top_k
         self.context = ""
@@ -54,8 +55,6 @@ class Retriever:
 
     def save_embedding(self, file):
         text = parse_file(file)
-        print("added text")
-        self.context += text + "\n"
         chunks = self.chunk_text(text)
         for idx, chunk in enumerate(chunks):
             embedding = self.get_embeddings(chunk)
@@ -77,7 +76,7 @@ class Retriever:
                 index_file.write("\n")
                 if self.verbose:
                     print(f"wrote embedding for {file.name} at {embedding_file}")
-        self.embedded_files.append(file.name)
+        self.embedded_files[file.name] = text
 
     def load_embeddings(self):
         embeddings = []
@@ -91,16 +90,13 @@ class Retriever:
                     embedding = np.load(entry["embedding_file"])
                     embeddings.append(embedding)
                     metadata.append(entry)
-
         return np.vstack(embeddings), metadata
 
     def get_most_similar(self, query, top_k=5):
         query_embedding = self.get_embeddings(query)
         embeddings, metadata = self.load_embeddings()
-
         similarities = cosine_similarity(query_embedding, embeddings).flatten()
         top_indices = similarities.argsort()[-top_k:][::-1]
-
         if self.verbose:
             for idx in top_indices:
                 print(metadata[idx]["file_name"])
@@ -120,6 +116,7 @@ class RAGHandler:
         add_system_prompt=True,
         top_k=3,
         verbose=0,
+        mode="snippets",
     ):
         self.model = LLModel(
             model_type=model_type,
@@ -133,21 +130,65 @@ class RAGHandler:
         )
         self.add_context = add_context
         self.top_k = top_k
+        self.mode = mode
+        self.verbose = verbose
+        self.system_message = self.load_system_message()
+
+    def load_system_message(self):
+        with open("config.yaml", "r") as file:
+            config = yaml.safe_load(file)
+        return config["model"]["system_prompt"]
+
+    def retrieve_files(self):
+        context = ""
+        for file_name in self.retriever.embedded_files:
+            context += f"{file_name}\n{self.retriever.embedded_files[file_name]}"
+        return context
+
+    def retrieve_context(self, message_content=None):
+        if self.mode == "snippets":
+            context = self.retriever.get_most_similar(message_content, top_k=self.top_k)
+            context = "\n".join(context)
+        else:
+            context = self.retrieve_files()
+        return context
+
+    def trim_history(self):
+        CONTEXT_LENGTH_LIMIT = 10000  # Example value, adjust as necessary
+        current_length = sum(
+            len(message["content"].split())
+            for message in self.model.language_model.history
+        )
+        print(current_length)
+        while (
+            current_length > CONTEXT_LENGTH_LIMIT
+            and len(self.model.language_model.history) > 1
+        ):
+            removed_message = self.model.language_model.history.pop(0)
+            current_length -= len(removed_message["content"])
 
     def make_prediction(self, messages):
+        if not isinstance(messages, list):
+            raise ValueError(f"messages must be a list of dicts, got {type(messages)}")
+        for item in messages:
+            if not isinstance(item, dict):
+                raise ValueError(
+                    f"Each item in messages must be a dict, got {type(item)}"
+                )
+            if "content" not in item:
+                raise ValueError(f"Each item in messages must have a 'content' key")
+            if "role" not in item:
+                raise ValueError(f"Each item in messages must have a 'role' key")
         if self.retriever.embedded_files:
-            most_similar = self.retriever.get_most_similar(
-                messages[-1]["content"], top_k=self.top_k
-            )
-            context = "\n".join(most_similar)
+            context = self.retrieve_context(messages[-1]["content"])
         else:
-            context = "None"
-        # print(self.retriever.context)
-        self.model.language_model.history.append(
-            {"role": "user", "content": f"{context}\n{messages[-1]}"}
-        )
-        prediction = self.model.language_model.predict(
-            self.model.language_model.history
-        )
-        self.model.language_model.history.append(prediction)
+            context = ""
+        msg = messages[-1]["content"] + "\nContext:" + context
+        user_message = [
+            {"role": "system", "content": self.system_message},
+            {"role": "user", "content": msg},
+        ]
+        if self.verbose:
+            print(user_message)
+        prediction = self.model.language_model.predict(user_message)
         return prediction
