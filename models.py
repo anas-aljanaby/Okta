@@ -2,6 +2,7 @@ from openai import OpenAI
 from huggingface_hub import InferenceClient
 import yaml
 import os
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 DEFAULT_HF_MODEL = "HuggingFaceH4/zephyr-7b-beta"
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"

@@ -6,8 +6,25 @@ import os
 import json
 import shutil
 import yaml
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from file_parser import parse_file
+
+
+
+class Retriever:
+    def __ini__(
+        self,
+        embeddings_model, 
+        persist_dir = 'embeddings',
+    ):
+        self.embeddings_model = embeddings_model
+        self.persist_dir = persist_dir
+
+        os.makedirs(self.persist_dir, exist_ok=True)
+        self.retriever = 
+
+
 
 
 class Retriever:
@@ -39,12 +56,9 @@ class Retriever:
         return embeddings.detach().numpy()
 
     def chunk_text(self, text):
-        words = text.split()
-        chunks = [
-            " ".join(words[i : i + self.chunk_size])
-            for i in range(0, len(words), self.chunk_size)
-        ]
-        return chunks
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        splits = text_splitter.split_documents(text)
+        return splits
 
     def clear_embeddings(self):
         if os.path.exists(self.embeddings_folder):
@@ -168,6 +182,7 @@ class RAGHandler:
             current_length -= len(removed_message["content"])
 
     def make_prediction(self, messages):
+        
         if not isinstance(messages, list):
             raise ValueError(f"messages must be a list of dicts, got {type(messages)}")
         for item in messages:
