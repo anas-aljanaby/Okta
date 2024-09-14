@@ -4,3 +4,5 @@ __pycache__/
 env
 embeddings
 chats/
+persist_directory/
+

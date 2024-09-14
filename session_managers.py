@@ -2,6 +2,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 from langchain_chroma import Chroma
+import os
 
 from file_parser import parse_file
 
@@ -34,5 +35,4 @@ class SessionRetriever:
 
     def as_retriever(self):
         return self.chroma_store.as_retriever()
-
 
