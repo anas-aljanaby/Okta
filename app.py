@@ -181,18 +181,11 @@ if "settings_open" not in st.session_state:
 if "rename_button_open" not in st.session_state:
     st.session_state.rename_button_open = False
 
-if st.button("Chat Settings"):
-    st.session_state.settings_open = not st.session_state.settings_open
-
-cols = st.columns([0.5, 0.5])
-
-
 if "current_chat_id" not in st.session_state:
     if load_chats():
         load_chat_session(load_chats()[0]["chat_id"])
     else:
         load_chat_session(create_new_chat())
-
 
 uploaded_files = st.sidebar.file_uploader(
     "Upload",
@@ -207,21 +200,32 @@ for file in uploaded_files:
         st.session_state.session_retriever.add_document(file)
         add_uploaded_file_name(file.name)
 
-with cols[0]:
+
+top_container = st.container()
+with top_container:
+    col1, col2 = st.columns([1, 3])
+    
+    with col1:
+        if st.button("Chat Settings"):
+            st.session_state.settings_open = not st.session_state.settings_open
+
     if st.session_state.settings_open:
-        if st.button("Delete current Chat"):
-            delete_chat()
-        if st.button("Rename current Chat"):
-            st.session_state.rename_button_open = (
-                not st.session_state.rename_button_open
-            )
+        with col1:
+            if st.button("Delete current Chat"):
+                delete_chat()
+            if st.button("Rename current Chat"):
+                st.session_state.rename_button_open = not st.session_state.rename_button_open
+        
         if st.session_state.rename_button_open:
-            rename_chat()
-with cols[1]:
-    if st.session_state.chat["uploaded_files"]:
-        st.write("**Embedded Files:**")
-        for file in st.session_state.chat["uploaded_files"]:
-            st.write(f"- {file}")
+            with col2:
+                rename_chat()
+
+    with col2:
+        if st.session_state.chat["uploaded_files"]:
+            st.write("**Embedded Files:**")
+            for file in st.session_state.chat["uploaded_files"]:
+                st.write(f"- {file}")
+
 
 st.title("Okta AI - chat with local files")
 
