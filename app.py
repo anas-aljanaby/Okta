@@ -1,11 +1,9 @@
 import yaml
 import streamlit as st
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain.tools.retriever import create_retriever_tool
-from langchain_chroma import Chroma
 from langgraph.prebuilt import create_react_agent
-from langchain_core.output_parsers import StrOutputParser
 from utils import create_word_document
 import uuid
 import json
@@ -60,12 +58,33 @@ st.markdown(
         width: 100%;
         }
         .element-container:has(#button-after) + div button:hover {
-        background-color: #40404e;
+        background-color: #33353f;
         color: #fff;
         }
  </style>""",
     unsafe_allow_html=True,
 )
+
+st.markdown(
+    """
+<style>.element-container:has(#button-after1) + div button {
+        background-color: #33353f;
+        color: #fff;
+        padding: 1px 1px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-bottom: 0px;
+        width: 100%;
+        }
+        .element-container:has(#button-after1) + div button:hover {
+        background-color: #33353f;
+        color: #fff;
+        }
+ </style>""",
+    unsafe_allow_html=True,
+)
+
 
 def offer_download(message_content, i):
     word_file = create_word_document(message_content)
@@ -77,15 +96,27 @@ def offer_download(message_content, i):
         key=f"download_{i}",
     )
 
+
 def create_new_chat():
     chat_id = str(uuid.uuid4())
     new_chat = {
         "chat_id": chat_id,
+        "display_name": chat_id,
         "uploaded_files": [],
         "messages": [],
     }
-    with open(f"chats/{chat_id}.json", "w") as file:
+    chat_path = f"chats/{chat_id}.json"
+    with open(chat_path, "w") as file:
         json.dump(new_chat, file)
+    metadata_path = "chats/metadata.json"
+    if os.path.exists(metadata_path):
+        with open(metadata_path, "r") as file:
+            metadata = json.load(file)
+    else:
+        metadata = {"chat_ids": []}
+    metadata["chat_ids"].insert(0, chat_id)  # Add new chat ID to the top
+    with open(metadata_path, "w") as file:
+        json.dump(metadata, file)
     return chat_id
 
 
@@ -94,12 +125,33 @@ def load_chat(chat_id):
         chat = json.load(file)
     return chat
 
+
+def load_chats():
+    metadata_path = "chats/metadata.json"
+    if not os.path.exists(metadata_path):
+        return []
+
+    with open(metadata_path, "r") as file:
+        metadata = json.load(file)
+    chat_ids = metadata.get("chat_ids", [])
+    chats = []
+    for chat_id in chat_ids:
+        chat_path = f"chats/{chat_id}.json"
+        if os.path.exists(chat_path):
+            with open(chat_path, "r") as file:
+                chat_data = json.load(file)
+                chats.append(chat_data)
+    return chats
+
+
 def load_chat_session(chat_id):
     st.session_state.current_chat_id = chat_id
     st.session_state.chat = load_chat(st.session_state.current_chat_id)
     st.session_state.messages = st.session_state.chat["messages"]
     st.session_state.uploaded_files = st.session_state.chat["uploaded_files"]
-    st.session_state.session_retriever = SessionRetriever(st.session_state.current_chat_id)
+    st.session_state.session_retriever = SessionRetriever(
+        st.session_state.current_chat_id
+    )
     st.session_state.retrieve_tool = create_retriever_tool(
         st.session_state.session_retriever.as_retriever(),
         "file_retriever",
@@ -111,6 +163,7 @@ def load_chat_session(chat_id):
     )
     st.rerun()
 
+
 def save_message(chat_id, role, content):
     chat_data = load_chat(chat_id)
     new_message = {
@@ -121,11 +174,13 @@ def save_message(chat_id, role, content):
     with open(f"chats/{chat_id}.json", "w") as chat_file:
         json.dump(chat_data, chat_file)
 
+
 def add_uploaded_file_name(filename):
     chat_data = load_chat(st.session_state.current_chat_id)
     chat_data["uploaded_files"].append(filename)
     with open(f"chats/{st.session_state.current_chat_id}.json", "w") as chat_file:
         json.dump(chat_data, chat_file)
+
 
 if not os.path.exists("chats"):
     os.mkdir("chats")
@@ -133,31 +188,6 @@ if not os.path.exists("chats"):
 VERBOSE = 1
 DEBUG = 0
 
-
-# if 'chat' not in st.session_state:
-#     st.session_state.current_chat_id = create_new_chat()
-#     st.session_state.chat = load_chat(st.session_state.current_chat_id)
-#     st.session_state.messages = st.session_state.chat["messages"]
-#
-# if "session_retriever" not in st.session_state:
-#     st.session_state.session_retriever = SessionRetriever(st.session_state.current_chat_id)
-#
-# if "retrieve_tool" not in st.session_state:
-#     st.session_state.retrieve_tool = create_retriever_tool(
-#         st.session_state.session_retriever.as_retriever(),
-#         "file_retriever",
-#         "Searches and return chunks from the embedded files.",
-#     )
-#
-# if 'parser' not in st.session_state:
-#     st.session_state.parser = StrOutputParser()
-#
-# if "agent_executer" not in st.session_state:
-#     st.session_state.agent_executer = create_react_agent(
-#         ChatOpenAI(model="gpt-3.5-turbo", temperature=0),
-#         [st.session_state.retrieve_tool],
-#     )
-#
 
 cols = st.columns([0.15, 0.2, 0.2, 0.2, 0.2])
 if "settings_open" not in st.session_state:
@@ -174,11 +204,17 @@ if st.session_state.settings_open:
 st.title("Okta AI - chat with local files")
 
 if "current_chat_id" not in st.session_state:
-    load_chat_session(create_new_chat())
+    if load_chats():
+        load_chat_session(load_chats()[0]["chat_id"])
+    else:
+        load_chat_session(create_new_chat())
 
 uploaded_files = st.sidebar.file_uploader(
-    "Upload", label_visibility="collapsed", accept_multiple_files=True,
-    key=f"file_uploader_{st.session_state.current_chat_id}")
+    "Upload",
+    label_visibility="collapsed",
+    accept_multiple_files=True,
+    key=f"file_uploader_{st.session_state.current_chat_id}",
+)
 
 for file in uploaded_files:
     if file.name not in st.session_state.uploaded_files:
@@ -186,20 +222,25 @@ for file in uploaded_files:
         st.session_state.session_retriever.add_document(file)
         add_uploaded_file_name(file.name)
 
-
 if st.sidebar.button("New Chat"):
     load_chat_session(create_new_chat())
 
-for chat in os.listdir("chats"):
-    st.sidebar.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-    if st.sidebar.button(chat):
-        load_chat_session(chat.split(".")[0])
+
+for chat in load_chats():
+    if chat["chat_id"] == st.session_state.current_chat_id:
+        st.sidebar.markdown('<span id="button-after1"></span>', unsafe_allow_html=True)
+    else:
+        st.sidebar.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
+    if st.sidebar.button(chat["display_name"]):
+        load_chat_session(chat["chat_id"])
+
 
 def extract_llm_response(response):
-    messages = response['messages']
+    messages = response["messages"]
     for message in reversed(messages):
         if isinstance(message, AIMessage) and message.content:
             return message.content
+
 
 prompt = st.chat_input("say something")
 
@@ -225,4 +266,3 @@ for i, msg in enumerate(st.session_state.messages):
             with cols[1]:
                 if st.button("↻", key=f"reg_{i}"):
                     pass
-

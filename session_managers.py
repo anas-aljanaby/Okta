@@ -1,8 +1,7 @@
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 from langchain_chroma import Chroma
-import os
 
 from file_parser import parse_file
 
@@ -20,7 +19,7 @@ class SessionRetriever:
         self.chroma_store = Chroma(
             collection_name=f"chroma_{self.session_id}",
             embedding_function=self.embedding_model,
-            persist_directory=self.persist_directory
+            persist_directory=self.persist_directory,
         )
 
     def add_document(self, document):
@@ -35,4 +34,3 @@ class SessionRetriever:
 
     def as_retriever(self):
         return self.chroma_store.as_retriever()
-
