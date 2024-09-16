@@ -13,40 +13,6 @@ from session_managers import SessionRetriever
 
 st.markdown(
     """
-    <style>
-    .st-emotion-cache-15hul6a.ef3psqc12 {
-        font-size: 15px;
-    }
-    .st-emotion-cache-fm8pe0.e1nzilvr4 p {
-        font-size: 15px;
-    }
-    </style>
-""",
-    unsafe_allow_html=True,
-)
-
-button_style = """
-    <style>
-    .custom-chat-button-container button {
-        background-color: transparent;
-        color: #fff;
-        padding: 1px 1px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        margin-bottom: 0px;
-        width: 100%;
-    }
-    .custom-chat-button-container button:hover {
-        background-color: #2b2c36;
-        color: #fff;
-    }
-    </style>
-"""
-st.sidebar.markdown(button_style, unsafe_allow_html=True)
-
-st.markdown(
-    """
 <style>.element-container:has(#button-after) + div button {
         background-color: transparent;
         color: #fff;
@@ -84,17 +50,6 @@ st.markdown(
  </style>""",
     unsafe_allow_html=True,
 )
-
-
-def offer_download(message_content, i):
-    word_file = create_word_document(message_content)
-    st.download_button(
-        label="💾",
-        data=word_file,
-        file_name="message.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        key=f"download_{i}",
-    )
 
 
 def create_new_chat():
@@ -182,6 +137,22 @@ def add_uploaded_file_name(filename):
         json.dump(chat_data, chat_file)
 
 
+def delete_chat():
+    chat_id = st.session_state.current_chat_id
+    chat_path = f"chats/{chat_id}.json"
+    os.remove(chat_path)
+    metadata_path = "chats/metadata.json"
+    with open(metadata_path, "r") as file:
+        metadata = json.load(file)
+    metadata["chat_ids"].remove(chat_id)
+    with open(metadata_path, "w") as file:
+        json.dump(metadata, file)
+    if metadata["chat_ids"]:
+        load_chat_session(metadata["chat_ids"][0])
+    else:
+        load_chat_session(create_new_chat())
+
+
 if not os.path.exists("chats"):
     os.mkdir("chats")
 
@@ -189,25 +160,39 @@ VERBOSE = 1
 DEBUG = 0
 
 
-cols = st.columns([0.15, 0.2, 0.2, 0.2, 0.2])
+def rename_chat():
+    current_chat = st.session_state.chat["display_name"]
+    new_name = st.text_input(
+        "Enter new chat name", value=current_chat, key="new_chat_name"
+    )
+    if st.button("Confirm Rename", key="confirm_rename_button"):
+        if new_name and new_name != current_chat:
+            st.session_state.chat["display_name"] = new_name
+            chat_path = f"chats/{st.session_state.current_chat_id}.json"
+            with open(chat_path, "w") as file:
+                json.dump(st.session_state.chat, file)
+            st.success(f"Chat renamed to: {new_name}")
+            st.rerun()
+
+
 if "settings_open" not in st.session_state:
     st.session_state.settings_open = False
-with cols[0]:
-    if st.button("Chat Settings"):
-        st.session_state.settings_open = not st.session_state.settings_open
-if st.session_state.settings_open:
-    with cols[1]:
-        pass
-    with cols[2]:
-        pass
 
-st.title("Okta AI - chat with local files")
+if "rename_button_open" not in st.session_state:
+    st.session_state.rename_button_open = False
+
+if st.button("Chat Settings"):
+    st.session_state.settings_open = not st.session_state.settings_open
+
+cols = st.columns([0.5, 0.5])
+
 
 if "current_chat_id" not in st.session_state:
     if load_chats():
         load_chat_session(load_chats()[0]["chat_id"])
     else:
         load_chat_session(create_new_chat())
+
 
 uploaded_files = st.sidebar.file_uploader(
     "Upload",
@@ -221,6 +206,24 @@ for file in uploaded_files:
         st.session_state.uploaded_files.append(file.name)
         st.session_state.session_retriever.add_document(file)
         add_uploaded_file_name(file.name)
+
+with cols[0]:
+    if st.session_state.settings_open:
+        if st.button("Delete current Chat"):
+            delete_chat()
+        if st.button("Rename current Chat"):
+            st.session_state.rename_button_open = (
+                not st.session_state.rename_button_open
+            )
+        if st.session_state.rename_button_open:
+            rename_chat()
+with cols[1]:
+    if st.session_state.chat["uploaded_files"]:
+        st.write("**Embedded Files:**")
+        for file in st.session_state.chat["uploaded_files"]:
+            st.write(f"- {file}")
+
+st.title("Okta AI - chat with local files")
 
 if st.sidebar.button("New Chat"):
     load_chat_session(create_new_chat())
@@ -259,10 +262,3 @@ for i, msg in enumerate(st.session_state.messages):
     role, content = msg["role"], msg["content"]
     with st.chat_message(role):
         st.markdown(content)
-        if role == "assistant":
-            cols = st.columns([0.06, 0.06, 0.88])
-            with cols[0]:
-                offer_download(content, i)
-            with cols[1]:
-                if st.button("↻", key=f"reg_{i}"):
-                    pass
