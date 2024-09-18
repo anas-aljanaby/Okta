@@ -14,7 +14,7 @@ from session_managers import SessionRetriever
 st.markdown(
     """
 <style>.element-container:has(#button-after) + div button {
-        background-color: transparent;
+        background-color: #262730;
         color: #fff;
         padding: 1px 1px;
         border: none;
@@ -33,7 +33,7 @@ st.markdown(
 
 st.markdown(
     """
-<style>.element-container:has(#button-after1) + div button {
+<style>.element-container:has(#button-current-chat) + div button {
         background-color: #33353f;
         color: #fff;
         padding: 1px 1px;
@@ -43,7 +43,7 @@ st.markdown(
         margin-bottom: 0px;
         width: 100%;
         }
-        .element-container:has(#button-after1) + div button:hover {
+        .element-container:has(#button-current_chat) + div button:hover {
         background-color: #33353f;
         color: #fff;
         }
@@ -51,6 +51,25 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+st.markdown(
+    """
+<style>.element-container:has(#button-new-chat) + div button {
+        background-color: #262730;
+        color: #fff;
+        padding: 1px 1px;
+        border: 1px solid #fff;
+        border-radius: 20px;
+        cursor: pointer;
+        margin-bottom: 0px;
+        width: 100%;
+        }
+        .element-container:has(#button-new-chat) + div button:hover {
+        background-color: #262730;
+        color: #fff;
+        }
+ </style>""",
+    unsafe_allow_html=True,
+)
 
 def create_new_chat():
     chat_id = str(uuid.uuid4())
@@ -200,12 +219,41 @@ for file in uploaded_files:
         st.session_state.session_retriever.add_document(file)
         add_uploaded_file_name(file.name)
 
+st.markdown(
+    """
+<style>.element-container:has(#button-settings) + div button {
+        background-color: #33353f;
+        color: #fff;
+        padding: 1px 1px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-bottom: 0px;
+        margin-top: -100px;
+        width: 100%;
+        }
+        .element-container:has(#button-settings) + div button:hover {
+        background-color: #33353f;
+        color: #fff;
+        margin-top: -100px;
+        }
+        .main > div:first-child {
+            margin-top: 0px;  / Adjust this value as needed */
+        }
+        div.block-container {
+            padding-top: 1rem;
+        }
+ </style>""",
+    unsafe_allow_html=True,
+)
 
 top_container = st.container()
+# Your existing code
 with top_container:
     col1, col2 = st.columns([1, 3])
     
     with col1:
+        st.sidebar.markdown('<span id="button-settings"></span>', unsafe_allow_html=True)
         if st.button("Chat Settings"):
             st.session_state.settings_open = not st.session_state.settings_open
 
@@ -226,16 +274,19 @@ with top_container:
             for file in st.session_state.chat["uploaded_files"]:
                 st.write(f"- {file}")
 
-
 st.title("Okta AI - chat with local files")
 
+
+
+
+st.sidebar.markdown('<span id="button-new-chat"></span>', unsafe_allow_html=True)
 if st.sidebar.button("New Chat"):
     load_chat_session(create_new_chat())
 
 
 for chat in load_chats():
     if chat["chat_id"] == st.session_state.current_chat_id:
-        st.sidebar.markdown('<span id="button-after1"></span>', unsafe_allow_html=True)
+        st.sidebar.markdown('<span id="button-current-chat"></span>', unsafe_allow_html=True)
     else:
         st.sidebar.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
     if st.sidebar.button(chat["display_name"]):
