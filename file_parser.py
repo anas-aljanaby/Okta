@@ -5,6 +5,10 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 import re
 
+
+import os
+import streamlit as st
+
 FILE_TYPE_DOCX = (
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 )
@@ -13,6 +17,33 @@ FILE_TYPE_PPTX = (
     "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 )
 FILE_TYPE_TEXT = "text/plain"
+text_file_types = [
+    FILE_TYPE_DOCX, FILE_TYPE_PDF, FILE_TYPE_PPTX, FILE_TYPE_TEXT
+]
+
+
+class UploadedFileWrapper:
+    def __init__(self, file_path):
+        self.file = open(file_path, "rb")
+        self.name = os.path.basename(file_path)
+        self.type = self.get_file_type(file_path)
+        self.size = os.path.getsize(file_path)
+
+    def get_file_type(self, file_path):
+        if file_path.endswith(".txt"):
+            return FILE_TYPE_TEXT
+        elif file_path.endswith(".pdf"):
+            return FILE_TYPE_PDF
+        elif file_path.endswith(".docx"):
+            return FILE_TYPE_DOCX
+        else:
+            return ""
+
+    def read(self):
+        return self.file.read()
+
+    def __del__(self):
+        self.file.close()
 
 
 def parse_file(file):
@@ -42,8 +73,8 @@ def is_arabic(text):
 
 
 def text_from_pdf(file):
-    # with open(file_path, 'rb') as file:
-    reader = PyPDF2.PdfReader(file)
+    if isinstance(file, UploadedFileWrapper):
+        reader= PyPDF2.PdfReader(file.file)
     num_pages = len(reader.pages)
 
     full_text = ""
