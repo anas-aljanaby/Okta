@@ -74,7 +74,9 @@ def is_arabic(text):
 
 def text_from_pdf(file):
     if isinstance(file, UploadedFileWrapper):
-        reader= PyPDF2.PdfReader(file.file)
+        reader = PyPDF2.PdfReader(file.file)
+    else: 
+        reader = PyPDF2.PdfReader(file)
     num_pages = len(reader.pages)
 
     full_text = ""
